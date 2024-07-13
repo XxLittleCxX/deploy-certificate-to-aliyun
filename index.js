@@ -88,7 +88,7 @@ async function deployCertificate() {
   await deletePreviouslyDeployedCertificate();
 
   await callAliyunApi(
-    "https://cas.aliyuncs.com", "2020-04-0",
+    "https://cas.aliyuncs.com", "2020-04-07",
     "UploadUserCertificate",
     {
       Cert: fullchain,
