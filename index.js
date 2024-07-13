@@ -54,47 +54,18 @@ async function deletePreviouslyDeployedCertificate() {
    * @typedef CertificateListItem
    * @prop {number} id
    * @prop {string} name
-   * 
-   * @typedef DescribeUserCertificateListResponse
-   * @prop {number} TotalCount
-   * @prop {CertificateListItem[]} CertificateList
    */
-
-  /**
-   * @param {(item: CertificateListItem) => Promise<void>} callback
-   */
-  async function listCertificates(callback) {
-    let currentItems = 0;
-
-    for (let i = 1; ; i++) {
-      /**
-       * @type {DescribeUserCertificateListResponse}
-       */
-      const response = await callAliyunApi(
-        "https://cas.aliyuncs.com", "2018-07-13",
-        "DescribeUserCertificateList",
-        {
-          ShowSize: 50,
-          CurrentPage: i
-        }
-      );
-
-      for (const item of response.CertificateList)
-        await callback(item);
-
-      currentItems += response.CertificateList.length;
-      if (currentItems === response.TotalCount) break;
+  const response = await callAliyunApi(
+    "https://cas.aliyuncs.com", "2020-04-07",
+    "ListUserCertificateOrder",
+    {
+      OrderType: 'UPLOAD',
+      Keyword: input.certificateName
     }
-  }
+  );
+  let foundId = response.CertificateOrderList?.[0]?.CertificateId
 
-  let foundId = 0;
-  await listCertificates(async item => {
-    if (item.name === input.certificateName) {
-      foundId = item.id;
-    }
-  });
-
-  if (foundId === 0) {
+  if (!foundId) {
     console.log("Previously deployed certificate not found. Skipping delete.");
     return;
   }
@@ -102,7 +73,7 @@ async function deletePreviouslyDeployedCertificate() {
   console.log(`Found previously deployed certificate ${foundId}. Deleting.`);
 
   await callAliyunApi(
-    "https://cas.aliyuncs.com", "2018-07-13",
+    "https://cas.aliyuncs.com", "2020-04-07",
     "DeleteUserCertificate",
     {
       CertId: foundId
@@ -117,8 +88,8 @@ async function deployCertificate() {
   await deletePreviouslyDeployedCertificate();
 
   await callAliyunApi(
-    "https://cas.aliyuncs.com", "2018-07-13",
-    "CreateUserCertificate",
+    "https://cas.aliyuncs.com", "2020-04-0",
+    "UploadUserCertificate",
     {
       Cert: fullchain,
       Key: key,
@@ -135,13 +106,12 @@ async function deployCertificateToCdn() {
 
     await callAliyunApi(
       "https://cdn.aliyuncs.com", "2018-05-10",
-      "SetDomainServerCertificate",
+      "SetCdnDomainSSLCertificate",
       {
         DomainName: domain,
         CertName: input.certificateName,
         CertType: "cas",
-        ServerCertificateStatus: "on",
-        ForceSet: "1"
+        SSLProtocol: "on"
       }
     );
   }
