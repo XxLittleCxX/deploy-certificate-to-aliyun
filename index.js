@@ -64,7 +64,7 @@ async function deletePreviouslyDeployedCertificate() {
     "ListUserCertificateOrder",
     {
       OrderType: 'UPLOAD',
-      Status: 'EXPIRED',
+      Status: 'WILLEXPIRED',
       Keyword: input.certificateName
     }
   );
