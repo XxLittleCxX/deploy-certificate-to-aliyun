@@ -87,7 +87,7 @@ async function deployCertificate() {
 
   await deletePreviouslyDeployedCertificate();
 
-  await callAliyunApi(
+  let response = await callAliyunApi(
     "https://cas.aliyuncs.com", "2020-04-07",
     "UploadUserCertificate",
     {
@@ -96,9 +96,10 @@ async function deployCertificate() {
       Name: input.certificateName
     }
   );
+  return response.CertId
 }
 
-async function deployCertificateToCdn() {
+async function deployCertificateToCdn(CertId) {
   const domains = Array.from(new Set(input.cdnDomains.split(/\s+/).filter(x => x)));
 
   for (const domain of domains) {
@@ -111,16 +112,17 @@ async function deployCertificateToCdn() {
         DomainName: domain,
         CertName: input.certificateName,
         CertType: "cas",
-        SSLProtocol: "on"
+        SSLProtocol: "on",
+        CertId
       }
     );
   }
 }
 
 async function main() {
-  await deployCertificate();
+  let cid = await deployCertificate();
 
-  if (input.cdnDomains) await deployCertificateToCdn();
+  if (input.cdnDomains) await deployCertificateToCdn(cid);
 }
 
 main().catch(error => {
