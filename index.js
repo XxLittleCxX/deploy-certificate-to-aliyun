@@ -50,35 +50,35 @@ function callAliyunApi(endpoint, apiVersion, action, params) {
 }
 
 async function deletePreviouslyDeployedCertificate() {
-  /**
-   * @typedef CertificateListItem
-   * @prop {number} id
-   * @prop {string} name
-   */
-  const response = await callAliyunApi(
+  const expired = await callAliyunApi(
     "https://cas.aliyuncs.com", "2020-04-07",
     "ListUserCertificateOrder",
     {
       OrderType: 'UPLOAD',
+      Status: 'EXPIRED',
       Keyword: input.certificateName
     }
   );
-  let foundId = response.CertificateOrderList?.[0]?.CertificateId
-
-  if (!foundId) {
-    console.log("Previously deployed certificate not found. Skipping delete.");
-    return;
-  }
-
-  console.log(`Found previously deployed certificate ${foundId}. Deleting.`);
-
-  await callAliyunApi(
+  const willExpired = await callAliyunApi(
     "https://cas.aliyuncs.com", "2020-04-07",
-    "DeleteUserCertificate",
+    "ListUserCertificateOrder",
     {
-      CertId: foundId
+      OrderType: 'UPLOAD',
+      Status: 'EXPIRED',
+      Keyword: input.certificateName
     }
   );
+  for (const item of [...willExpired.CertificateOrderList, ...expired.CertificateOrderList]) {
+    console.log(`Found previously deployed certificate ${item.CertificateId}. Deleting.`);
+
+    await callAliyunApi(
+      "https://cas.aliyuncs.com", "2020-04-07",
+      "DeleteUserCertificate",
+      {
+        CertId: item.CertificateId
+      }
+    );
+  }
 }
 
 async function deployCertificate() {
