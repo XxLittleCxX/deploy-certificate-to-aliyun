@@ -205,6 +205,8 @@ async function deployCertificateToEsa(certId) {
       throw new Error(`siteName ${siteName} does NOT exist`);
     }
 
+    core.setOutput(`esa-site-id`, esaSiteList.Sites[0].SiteId);
+
     /**
      * @type {ListCertificatesResponse}
      */
@@ -242,6 +244,7 @@ async function deployCertificateToEsa(certId) {
 
 async function main() {
   const certId = await deployCertificate();
+  core.setOutput("cert-id", certId);
   console.log(`Deployed certificate ${certId}.`);
   if (input.cdnDomains) await deployCertificateToCdn(certId);
   if (input.esaSiteNames) await deployCertificateToEsa(certId);
